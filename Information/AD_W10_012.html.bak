@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>로그인</title>
+<link rel="stylesheet" type="text/css" href="css/admin.css">
+</head>
+<body class="utillity">
+	<div class="wrap">	
+	<!-- util_container -->
+	<div  class="util_container">		
+		<!-- util_content -->
+		<div class="util_content">
+			<form>
+				<div class="top_cont">
+					<h1 class="logo">CATCHAPP</h1>
+					<h2 class="h_tit">등록 정보를 통해 비밀번호 변경을 신청합니다.</h2>
+				</div>
+				<fieldset>
+					<legend>비밀번호 변경</legend>
+					<div class="list_type">
+						<div class="user_id">
+							<h3 class="tit">아이디</h3>
+							<div class="input_type">
+								<input type="text" name="" value="" placeholder="아이디" title="아이디 입력">
+							</div>
+						</div>
+						<div class="user_email">
+							<h3 class="tit">이메일</h3>
+							<div class="email_front">
+								<div class="input_type">
+									<input type="text" name="" value="" placeholder="이메일 첫 부분 입력" title="이메일 첫 부분 입력">
+								</div>
+								<span class="at">@</span>
+							</div>
+							<div class="email_tail">
+								<div class="input_type">
+									<input type="text" name="" value="" placeholder="이메일 계정 입력" title="이메일 계정 입력">
+								</div>
+							</div>
+						</div>
+						<div class="btn_wrap">
+							<button type="button" class="btn yellow btn_util btn_pw_change">비밀번호 변경 신청</button>
+						</div>
+						<div class="box_info user_pw_info">
+							<p class="txt1">
+								비밀번호 재설정을 위한 이메일이<br> <strong>회원님의 계정으로 발송</strong> 되었습니다.<br> <strong>해당 이메일은 발송 후 1시간 동안 유효</strong>합니다.
+							</p>
+							<p class="txt2">
+								메일이 5분 내 도착하지 않는 경우 스팸 메일함을<br> 확인해 주세요
+							</p>
+						</div>						
+					</div>
+				</fieldset>
+			</form>
+			
+		</div>
+		<!-- //util_content -->
+	</div>
+	<!-- //util_container -->
+	<!-- util_footer -->
+	<div class="util_footer">
+		<div class="inner">
+			<h1 class="logo">CATCHAPP</h1>
+			<div class="link_group">
+				<a href="#" class="btn yellow" target="_blank">퍼블릭 사이트</a>
+				<a href="#"  class="btn" target="_blank">서비스 소개서</a>
+				<a href="#"  class="btn" target="_blank">회사 소개서</a>
+			</div>
+			<p class="copyright">Copyright ⓒ ENDERS CO.,LTD. All Rights Reserved. 어플리케이션 관련 문의 : <a href="mailto:support@catchapp.co.kr">support@catchapp.co.kr</a></p>
+		</div>
+	</div>
+	<!-- //util_footer -->
+	</div>
+</body>
+</html>

@@ -1,0 +1,23 @@
+<!--#include virtual="/Inc/Include/ConfigSet.asp"-->
+<%
+	Dim UserId
+	
+	UserId		= Request.form("UserId")
+
+	Set conn = Server.CreateObject("ADODB.Connection")
+	conn.Open Enders.getConnStr(0)
+
+	SQL = "SELECT vchUSER_ID FROM ADMIN_USER_MASTER WHERE vchUSER_ID ='"& UserId &"' "
+
+	Set rs = conn.Execute(SQL)
+
+	if Not rs.eof and Not rs.bof Then
+		Response.write "false"
+	Else
+		Response.write "true"
+	End if
+
+
+	Enders.Dispose(0)
+
+%>

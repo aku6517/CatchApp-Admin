@@ -1,0 +1,134 @@
+<!--#include virtual="/Inc/Include/ConfigSet.asp"-->
+<!--#include virtual="/Inc/Include/LoginConfirm.asp"-->
+<%
+Dim lparamInfo(1)
+
+HMenuLevel 	=	SqlDefense(Trim(Request("HMenuLevel")))
+HMenuCode 	=	SqlDefense(Trim(Request("HMenuCode")))
+HMenuName		=	SqlDefense(Trim(Request("HMenuName")))
+
+Set conn = Server.CreateObject("ADODB.Connection")
+conn.Open Enders.getConnStr(0)
+
+SQL = "select vchUSER_ID, vchUSER_NAME from ADMIN_USER_MASTER order by vchUSER_NAME "
+
+Set RS = conn.Execute(SQL)
+
+If NOT(RS.Bof) Then RS_GetRows = RS.GetRows
+
+RS.Close
+SET RS = Nothing
+
+Enders.Dispose(0)
+%>
+<script type="text/javascript">
+function fn_GoAction(){
+	var frm = document.EndersFrm;
+	
+	if( frm.AddMenuName.value == "" ){
+		alert("메뉴명을 입력하세요");
+		frm.AddMenuName.focus();	
+		return;
+	} 
+	
+	if( frm.AddMenuUrl ){
+		if( frm.AddMenuName == "" ){
+			alert("URL을 입력하세요");	
+			frm.AddMenuName.focus();	
+			return;
+		} 
+	}
+	if( frm.AddMenuInfo ){	
+		if( frm.AddMenuInfo.checked == true ){
+			frm.AddMenuInfo.value = "Y";
+		}
+	}
+	if( frm.AddMenuPopup ){
+		if( frm.AddMenuPopup.checked == true ){
+			frm.AddMenuPopup.value = "Y";
+		}
+	}
+	frm.submit();	
+
+}
+</script>	
+<link href="<%=CssPath%>/Common.css" rel="stylesheet" type="text/css">
+<link href="<%=CssPath%>/admin.css" rel="stylesheet" type="text/css">
+<form name="EndersFrm" method="post" action="/Management/Menu/MenuManageSubPopupAction.asp">
+	<input type="hidden" name="HMenuLevel"	value="<%=HMenuLevel%>" >
+	<input type="hidden" name="HMenuCode" 	value="<%=HMenuCode%>" >
+<table width="99%" cellspacing="0" cellpadding="0" >
+  <tr>
+    <td valign="top" align="center" style="PADDING-LEFT: 5px;">
+      <table width="100%" cellspacing="0" cellpadding="0" >
+        <tr>
+          <td>
+            <table width="100%" cellspacing="0" cellpadding="0">
+              <tr>
+                <td width="60%" height="30"><span class="txt_ju_11">▶</span> <span class="txt_blue_14"><strong><%=HMenuLevel%>차메뉴 추가</strong></span> <span class="txt_12"><%=HMenuName%></span></td>
+                <td width="40%" align="right">
+	                <%
+									If ManageYN = "Y" Then
+									%>	
+                  <input type="button" value="저장" class="button2 blue" onclick="fn_GoAction()">
+									<%
+									End If
+									%>
+                  <input type="button" value="닫기" class="button2" onclick="window.close();">
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+				<tr>
+					<td align="center" valign="top">
+						<table cellpadding="0" cellspacing="0" class="sub_board_normal222">
+							<colgroup>
+							<col width="25%"/>
+							<col width="75%"/>
+							</colgroup>
+							<tr>
+								<th class="sub_board_normal222 sbn_type_d">메뉴명</th>
+								<td>
+									<input type="text" class="input_normal" name="AddMenuName" maxlength="20" style="width:60%;" value="">
+								</td>	
+							</tr>
+              <%
+              If HMenuLevel <> "1" Then
+              %>							
+							<tr>
+								<th class="sub_board_normal222 sbn_type_d">URL</th>
+								<td>
+									<input type="text" class="input_normal" name="AddMenuUrl" style="width:95%;" value="">
+								</td>	
+							</tr>
+              <%
+              End If
+              %>																				
+							<tr>
+								<th class="sub_board_normal222 sbn_type_d">담당자</th>
+								<td>
+       						<select name="AddMenuPer">
+       							<option value=''>없 음</option>
+       						<%
+									If isArray(RS_GetRows) Then
+										For i = 0 To UBound(RS_GetRows, 2)
+											PersonId	 = Trim(RS_GetRows(0, i))  
+											PersonName = Trim(RS_GetRows(1, i)) 
+									%>		
+             				<option value="<%=PersonId%>"><%=PersonName%></option>
+									<%
+										Next	
+									End If	
+									%>
+					        </select>									
+								</td>	
+							</tr>							
+						</table>
+					</td>
+				</tr>
+			</table> 
+		</td>
+	</tr>
+</table> 			 
+</form>  

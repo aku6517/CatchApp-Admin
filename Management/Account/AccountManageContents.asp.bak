@@ -1,0 +1,275 @@
+<script type="text/javascript">
+
+function fn_GoInsert(Mode, userid){
+	var frm = document.EndersFrm;
+
+	var url = "/Management/Account/AccountManageSubPopup.asp";
+	var status = "toolbar=no,directories=no,scrollbars=yes,resizable=yes,status=no,menubar=no,width=600, height=440, top=0,left=20"; 
+
+	window.open(url, "AccountInsert", status);
+
+	frm.ActionID.value = userid;
+	frm.ActionMode.value = Mode;
+	frm.target = "AccountInsert";                  
+	frm.action = url;                    
+	frm.method = "post";
+	frm.submit();   
+
+}
+
+function fn_GoDelete(Mode){
+	var frm = document.EndersFrm;
+	var confirmMessage = confirm("삭제를 진행 하시겠습니까?");
+
+	if( Mode == "D" ){	
+		var DelUserID = "";
+		if( frm.AccountDel.length > 0 ){ 
+			for( i = 0; i < frm.AccountDel.length;i++){
+				if( frm.AccountDel[i].checked == true ){
+					DelUserID = frm.DbUserID[i].value + "," 
+				}
+			}
+		} else {
+			if( frm.AccountDel.checked == true ){
+				DelUserID = frm.DbUserID.value;
+			}	
+		}
+
+		if(confirmMessage == true){
+			if( DelUserID == "" ){
+				alert("선택된 계정이 없습니다.")
+				return;
+			}else{
+				frm.DelUserID.value = selectDelRow();
+				frm.ActionMode.value = Mode;
+				frm.action="/Management/Account/AccountManageSubPopupAction.asp";
+				frm.submit();
+			}
+		}
+		else{
+			return;
+		}
+ 
+	}
+}
+
+function selectDelRow() {
+	var chk = document.getElementsByName("AccountDel"); // 체크박스객체를 담는다
+	var len = chk.length;    //체크박스의 전체 개수
+	var checkRow = '';      //체크된 체크박스의 value를 담기위한 변수
+	var checkCnt = 0;        //체크된 체크박스의 개수
+	var checkLast = '';      //체크된 체크박스 중 마지막 체크박스의 인덱스를 담기위한 변수
+	var rowid = '';             //체크된 체크박스의 모든 value 값을 담는다
+	var cnt = 0;                 
+
+	for(var i=0; i<len; i++){
+		if(chk[i].checked == true){
+			checkCnt++;        //체크된 체크박스의 개수
+			checkLast = i;     //체크된 체크박스의 인덱스
+		}
+	} 
+
+	for(var i=0; i<len; i++){
+		if(chk[i].checked == true){  //체크가 되어있는 값 구분
+			checkRow = chk[i].value;
+           	
+				if(checkCnt == 1){                            //체크된 체크박스의 개수가 한 개 일때,
+					rowid += checkRow;        //'value'의 형태 (뒤에 ,(콤마)가 붙지않게)
+				}else{                                            //체크된 체크박스의 개수가 여러 개 일때,
+					if(i == checkLast){                     //체크된 체크박스 중 마지막 체크박스일 때,
+						rowid += checkRow;  //'value'의 형태 (뒤에 ,(콤마)가 붙지않게)
+					}else{
+						rowid += checkRow+",";	 //'value',의 형태 (뒤에 ,(콤마)가 붙게)         			
+					}
+				}
+			cnt++;
+			checkRow = ''; 
+		}
+	}
+		return rowid;
+}
+</script>
+  	<input type="hidden" name="ActionMode" value="" >
+  	<input type="hidden" name="ActionID" value="" >
+ 	<input type="hidden" name="DelUserID" value="" >
+	
+	
+		<div class="content">
+			<div class="box_round">
+				<!-- 페이지명 -->
+				<div class="top_area">
+					<h3 class="h_tit">관리자 계정 관리</h3>
+				</div>
+				<!-- //페이지명 -->	
+
+				<%
+					page = Request("page")
+
+					Set conn = Server.CreateObject("ADODB.Connection")
+					conn.Open Enders.getConnStr(0)
+
+					SQL = "SELECT Count(*) As Result FROM ADMIN_USER_MASTER WHERE vchUSE_YN = 'Y'"
+
+					Set RS = conn.Execute(SQL)
+
+					If Not RS.BOF And Not RS.EOF Then
+						total = CInt(RS("Result"))
+					Else
+						total = 0
+					End If
+				%>
+
+				<!-- ctLR -->
+				<br>
+				<div class="ctLR">
+					<strong class="ctL total">총 <%=total%> 건</strong>
+					<div class="ctR">
+						<a href="javascript:fn_GoInsert('I', '')" class="button2 yellow">계정등록</a>
+						<a href="javascript:fn_GoDelete('D')" class="button2">계정삭제</a>
+					</div>
+				</div>
+				<!-- //ctLR -->
+				<!-- tbDesign -->
+				<table class="tbDesign">
+				<colgroup>
+					<col width="100">
+					<col width="100">					
+					<col width="100">
+					<col width="100">
+					<col width="100">
+					<col width="100">
+					<col width="100">					
+				</colgroup>
+				<thead>
+				<tr>
+					<th>선택</th>
+					<th>아이디</th>
+					<th>소속</th>
+					<th>성명</th>
+					<th>권한타입</th>
+					<th>등록일시</th>
+					<th>최종수정</th>
+				</tr>
+				</thead>
+				<%
+					scale=10
+
+					If page = "" Then
+						page=1
+					End If    
+					
+					cpage = CInt(page)
+					totalpage = CInt(total/scale)
+					
+					If (totalpage * scale) <> total Then
+						totalpage = totalpage + 1
+					End If
+
+					If cpage = 1 Then
+						cline = 0 
+					Else 
+						cline = (cpage * scale) - scale 
+					End If
+
+					limit= cline + scale
+
+					If limit >= total Then
+						limit = total
+					End If
+
+					scale1 = limit - cline
+
+					SQL2 = "SELECT * FROM ADMIN_USER_MASTER WHERE vchUSE_YN = 'Y' Order by vchUSER_ID Desc LIMIT " & cline & "," & scale1 
+
+					Set RS2 = conn.Execute(SQL2)
+
+					i = 0 
+
+					If Not RS2.BOF And Not RS2.EOF Then
+						Do Until RS2.EOF
+				%>
+				<tbody>
+				<tr>
+	              	<input type="hidden" name="DbUserID" value="<%=RS2("vchUSER_ID")%>" >
+
+					<td><input type="checkbox" class="input_check" name="AccountDel" id = "AccountDel" value="<%=RS2("vchUSER_ID")%>"></td>
+					<td><a href="javascript:fn_GoInsert('U', '<%=RS2("vchUSER_ID")%>');"><%=RS2("vchUSER_ID")%></a></td>
+					<td><%=RS2("vchATTACHED")%></td>
+					<td><%=RS2("vchUSER_NAME")%></td>
+				<%	
+					If RS2("chADMIN_TYPE") = "1" Then
+						chADMIN_TYPE = "슈퍼관리자"
+					Else
+						chADMIN_TYPE = "일반관리자"
+					End If
+				%>
+					<td><%=chADMIN_TYPE%></td>
+					<td><%=RS2("dtREG_DT")%></td>
+					<td><%=RS2("dtMODI_DT")%></td>
+				</tr>
+				</tbody>
+				<%
+						RS2.MoveNext
+						Loop
+					End If
+
+					Enders.Dispose(0)
+				%>
+				</table>
+				<!-- //tbDesign -->
+				<!-- pagingButtonArea -->
+				<div class="pagingButtonArea">
+					<!-- paging -->
+					<div class="paging">
+				<%
+					'Paging------
+
+					pagenumber = 10
+					startpage = CInt((cpage - 1) / pagenumber) * pagenumber +1  
+					endpage = CInt((((startpage -1) +  pagenumber) / pagenumber) * pagenumber)
+
+					If totalpage <= endpage Then
+						endpage = totalpage
+					End If
+
+					If cpage > pagenumber Then
+						curpage = CInt(startpage - 1)
+						Response.write "<span class='prev'><a href='AccountManageContents.asp?page=" & curpage & "'><img src=""/images/btn_paging_prev.png"" alt='이전'></a></span>"
+					Else
+						If total > 0 Then
+							Response.write "<span class='prev'><img src=""/images/btn_paging_prev.png"" alt='이전'></span>"
+						End If
+					End If
+
+					curpage = startpage
+
+					Do While curpage <= endpage      
+
+					If curpage = cpage then
+						Response.write "<strong class='num'>" & cpage & "</strong>"
+					Else 
+						Response.write "<a href='AccountManageContents.asp?page=" & curpage & "' class='num'>" & curpage & "</a>"
+					End If
+		
+					curpage = curpage + 1
+	
+					Loop
+
+					If totalpage > endpage Then
+						curpage = intval(endpage + 1)  
+						Response.write "<span class='next'><a href='AccountManageContents.asp?page=" & curpage & "'><img src=""/images/btn_paging_next.png"" alt=""다음""></a></span>"
+					Else
+						If total > 0 Then
+							Response.write "<span class='next'><img src=""/images/btn_paging_next.png"" alt=""다음""></span>"
+						End If
+					End If
+				%>        
+					</div><!-- //paging -->
+
+				</div>
+				<!-- //pagingButtonArea -->
+
+				</div>
+				
+			</div>
+		</div>

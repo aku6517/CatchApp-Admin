@@ -1,0 +1,685 @@
+<%
+'========================================================================================
+' 해당 메뉴에 대한 권한
+'========================================================================================
+Function Chk_Auth(MenuCode,UserId, AdminType)
+	DIM Auth
+
+	Set conn = Server.CreateObject("ADODB.Connection")
+	conn.Open Enders.getConnStr(0)
+
+	'일반 관리자일 경우만 메뉴의 권한 체크
+	If AdminType = "2" Then
+		SQL = "SELECT ifnull(A.chVIEW_AUTH,'N') as AUTH "
+		SQL = SQL & " FROM	ADMIN_MENUAUTH A INNER JOIN ADMIN_MENU B ON A.chMENU_CODE = B.chMENU_CODE "
+		SQL = SQL & " WHERE	A.vchUSER_ID     = '"& UserId &"' AND A.chMENU_CODE      = '"& MenuCode &"' "
+	
+		Set rs = conn.Execute(SQL)
+	
+		if Not rs.eof and Not rs.bof Then
+			Auth = rs(0)
+		Else
+			Auth = "N"
+		End if
+
+	End If	
+	'슈퍼 관리자는 무조건 모든 메뉴 확인 가능
+	If AdminType = "1" Then
+		Auth = "Y"
+	End if
+
+	If UCASE(Left(Auth,1)) <> "Y" Then
+		str = "접근 권한이 없습니다.\n\n관리자에게 문의하여 주세요."
+		Call sb_AlertUrl(wwwURL, str)
+	End If
+
+	Chk_Auth = Auth
+End Function
+
+'========================================================================================
+' 메뉴 이름 가져오기
+'========================================================================================
+Function Chk_MenuName(MenuCode)
+	DIM strMenuName
+
+	Set conn = Server.CreateObject("ADODB.Connection")
+	conn.Open Enders.getConnStr(0)
+
+	SQL = "SELECT vchMENU_NAME "
+	SQL = SQL & " FROM	ADMIN_MENU "
+	SQL = SQL & " WHERE	left(chMENU_CODE, 2) = '"& Left(MenuCode,2) &"' and chMENU_LEVEL = '1' "
+	
+	Set rs = conn.Execute(SQL)
+
+	if Not rs.eof and Not rs.bof Then
+		strMenuName = rs(0)
+	Else
+		strMenuName = "메뉴이름 호출 오류"
+	End if
+
+	Chk_MenuName = strMenuName
+End Function
+'============================================================================
+'=	Function : isMember(allType)
+'=	회원 유무 확인후 Boolean형 반환.
+'============================================================================
+Function isMember()
+	If isNone(SSUserID) Then
+		isMember			=	False
+		Exit Function
+	End If
+	If Len(SSUserID) = 0 Then
+		isMember			=	False
+		Exit Function
+	End If	
+	isMember				=	True
+End Function
+
+'============================================================================
+'=	Function : isNone(allType)
+'=	allType이 None(Null 또는 Blank)형인지 확인후 Boolean형 반환.
+'============================================================================
+Function isNone(allType)
+	If isNull(allType) Then
+		isNone				=	True
+		Exit Function
+	End If
+	If allType				=	"" Then
+		isNone				=	True
+		Exit Function
+	End If
+	isNone					=	False
+End Function
+
+'============================================================================
+'=	Function : CheckManageBbs(Kind)
+'=	Kind에 따라 Bbs의 권한부여
+'============================================================================
+Function CheckManageBbs(MKind,MIdx)
+	If ManageYN = "Y" Then
+		CheckManageBbs = "fn_GoAction('"+MKind+"','"+MIdx+"');"
+	Else
+		CheckManageBbs = "alert('권한이 없습니다.\n\n관리자에게 문의하세요.')"
+	End If
+End Function
+
+'---------------------------------------------------------------------------
+' 로그남기기
+Sub sb_LogInput(SqlStr,URL)
+if SqlStr="" then SqlStr="" end if
+sb_Out ""&_
+	"<SCRIPT LANGUAGE='JavaScript'>"&_
+	"	try{"&_
+	"		top.dynamicLog.src = '/Common/CommonPage/LogInput.asp?URL="&URL&"&SqlStr="&SqlStr&"'"&_
+	"	}catch(e){"&_
+	"		document.getElementById('dynamicLog').src = '/Common/CommonPage/LogInput.asp?URL="&URL&"&SqlStr="&SqlStr&"'"&_
+	"	}"&_
+	"</SCRIPT>"
+End Sub
+
+
+'---------------------------------------------------------------------------
+' error 나면 돌아가기
+Sub sb_AlertHistoryBack(str)
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			"history.back();" &_
+			"alert('" & str & "');" &_
+		"</SCRIPT>"
+	Response.End
+End Sub
+
+'---------------------------------------------------------------------------
+' 경고창 후 팝업 부모창 url로 이동
+Sub sb_AlertIframeUrl(url,str, iframeName)
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			"top." & iframeName & ".location.replace('" & url & "');" &_
+			"alert('" & str & "');" &_
+		"</SCRIPT>"
+	'Response.End
+End Sub	 
+'---------------------------------------------------------------------------
+' 경고창 후 팝업 부모창 url로 이동
+Sub sb_AlertOpenerUrl(url, iframeName)
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			"opener.top." & iframeName & ".location.replace('" & url & "');" &_
+		"</SCRIPT>"
+	'Response.End
+End Sub	 
+'---------------------------------------------------------------------------
+' 경고창 후 url로 이동
+Sub sb_AlertUrl(url, str)
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			"location.replace('" & url & "');" &_
+			"alert('" & str & "');" &_
+		"</SCRIPT>"
+	Response.End
+End Sub	
+'---------------------------------------------------------------------------
+' 경고창 후 부모 리플레시 
+Sub sb_AlertParentReload(str)
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			"alert('" & str & "');" &_
+			"window.opener.location.reload();" &_
+		"</SCRIPT>"
+	Response.End
+End Sub	  
+'----------------------------------------------------------------------------
+' 지정수만큼의 부모창 이동
+Sub sb_UrlCnt(url,cnt)
+ 	dim i,parent
+	for i =1 to cnt
+		parent = parent & "parent."
+	Next
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			parent & "location.replace('" & url & "');" &_
+		"</SCRIPT>"
+	Response.End
+End Sub	 
+'----------------------------------------------------------------------------
+' 경고창후 지정수만큼의 부모창 이동
+Sub sb_AlertUrlCnt(url, str, cnt)
+ 	dim i,parent
+	for i =1 to cnt
+		parent = parent & "parent."
+	Next
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			parent & "location.replace('" & url & "');" &_
+			"alert('" & str & "');" &_
+		"</SCRIPT>"
+	Response.End
+End Sub	 
+'----------------------------------------------------------------------------
+' 최상위창으로 이동 
+Sub sb_UrlTop(url)
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			"top.location.replace('" & url & "');" &_
+		"</SCRIPT>"
+	Response.End
+End Sub	 
+
+'----------------------------------------------------------------------------
+' 경고창 후 최상위창으로 이동 
+Sub sb_Alerttop(url, str)
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			"top.location.replace('" & url & "');" &_
+			"alert('" & str & "');" &_
+		"</SCRIPT>"
+	Response.End
+End Sub
+'---------------------------------------------------------------------------
+' url로 이동
+Sub sb_UrlReplace(url)
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			"location.replace('" & url & "');" &_
+		"</SCRIPT>"
+	Response.End
+End Sub
+'---------------------------------------------------------------------------
+' url로 이동
+Sub sb_UrlHref(url)
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			"location.href = '" & url & "';" &_
+		"</SCRIPT>"
+	Response.End
+End Sub
+'---------------------------------------------------------------------------
+' 경고창 후 빈창
+Sub sb_AlertClear(str)
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			"location.replace('about:blank');" &_
+			"alert('" & str & "');" &_
+		"</SCRIPT>"
+	Response.End
+End Sub
+'---------------------------------------------------------------------------
+'경고창 후 닫기
+Sub sb_AlertrClose(str)
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			"window.close();" &_
+			"alert('" & str & "');" &_
+		"</SCRIPT>"
+	Response.End
+End Sub
+'---------------------------------------------------------------------------
+' 닫기
+Sub sb_Close()
+	sb_Out "<SCRIPT LANGUAGE='JavaScript'>" &_
+			"window.close();" &_
+		"</SCRIPT>"
+	Response.End
+End Sub
+'---------------------------------------------------------------------------
+' 경고창 띠우기
+Sub sb_Alert(str)
+	sb_Out "<SCRIPT LANGUAGE=javaScript>" &_
+		"alert('" & str & "');" &_
+		"</SCRIPT>"
+End Sub
+'---------------------------------------------------------------------------
+' 다른 창도 같이 리프레시 시킨다.
+Sub sb_Order(order)
+	Dim out
+	
+	out =		"<script language='javascript'>	" & chr(13)
+	out = out & "<!--							" & chr(13)
+	out = out & "	" & order & "				" & chr(13)
+	out = out & "//-->							" & chr(13)
+	out = out & "</script>						"
+
+	Call sb_Out(out)
+	Response.End
+End Sub
+
+
+'---------------------------------------------------------------------------
+'화면에 뿌려준다
+Sub sb_Out(str)
+	Response.Write str
+	Response.Flush
+End Sub
+
+'---------------------------------------------------------------------------
+'최소한의 SQL 인젝션 방어
+Function SqlDefense(ReStr)
+'	ReStr = Replace(lcase(ReStr), "--", "")
+'	ReStr = Replace(lcase(ReStr), ";", "")
+	ReStr = Replace(ReStr, " or ", "")
+	ReStr = Replace(ReStr, " and ", "")
+	ReStr = Replace(ReStr, " from ", "")
+	ReStr = Replace(ReStr, " into ", "")
+	ReStr = Replace(ReStr, "insert", "")
+	ReStr = Replace(ReStr, "update", "")
+	ReStr = Replace(ReStr, "set", "")
+	ReStr = Replace(ReStr, "where", "")
+	ReStr = Replace(ReStr, "drop", "")
+	ReStr = Replace(ReStr, "values", "")
+	ReStr = Replace(ReStr, "null", "")
+	ReStr = Replace(ReStr, "declare", "")
+'-- 관리자에서 스크립트 넣을 수 있도록 요청_임미라_최요한요청_20120920_오상민작업
+'	ReStr = Replace(ReStr), "script", "")
+	ReStr = Replace(ReStr, "xp_", "")
+	ReStr = Replace(ReStr, "CRLF", "")
+	ReStr = Replace(ReStr, "exec", "")
+	ReStr = Replace(ReStr, "onvarchar", "")
+	ReStr = Replace(ReStr, "set", "")
+	ReStr = Replace(ReStr, " cast ", "")
+	ReStr = Replace(ReStr, "00100111", "")
+	ReStr = Replace(ReStr, "00100010", "")
+	ReStr = Replace(ReStr, "00111100", "")
+	ReStr = Replace(ReStr, "select", "")
+	ReStr = Replace(ReStr, "0x", "")
+	ReStr = Replace(ReStr, "exe", "")
+	ReStr = Replace(ReStr, "delete", "")
+	ReStr = Replace(ReStr, "go ", "")
+	ReStr = Replace(ReStr, "create", "")
+	ReStr = Replace(ReStr, "convert", "")
+    
+	SqlDefense = ReStr
+End Function
+'-----------------------------------------------------
+
+'ASP에서 자바스크립트 호출
+Sub OnLoadCall(functionName)
+	Response.Write "<script language='vbscript'>" & vblf
+	Response.Write "	sub window_onload()" & vblf
+	Response.Write "		CALL " & functionName & " " & vblf
+	Response.Write "		window.focus()" & vblf
+	Response.Write "	end sub" & vblf
+	Response.Write "</script>"
+End Sub
+
+
+'============================================================================
+'=	Function : reIntLen(intType, lenSize)
+'=	intType을 lenSize의 자리수에서 부족한 자리수만큼 앞에 0을 추가하여 반환
+'============================================================================
+Function reIntLen(intType, lenSize)
+	DIM i, buffer
+	If NOT isInt(intType) Then
+		Response.Write "<br><br><br><span style='color: #ff3333; font-size: 12px;'>* reIntLen함수의 인수로 숫자형 데이터를 입력하여 주십시오.</span><br><br><br>"
+		Response.End
+		Exit Function
+	End If
+
+	If Len(intType) >= lenSize Then
+		reIntLen			=	intType
+	End If
+
+	buffer					=	""
+
+	FOR i = 1 TO lenSize - len(intType) STEP 1
+		buffer				=	buffer & "0"
+	Next
+	reIntLen				=	buffer & intType
+End Function
+
+
+'============================================================================
+'=	Function : isInt(intType) 
+'=	intType이 정수로 변환이 가능한 내용인지 확인후 Boolean형 반환.
+'============================================================================
+Function isInt(intType)
+	DIM i, intChar, intChar2
+	If isNone(intType) Then
+		isInt				=	False
+		Exit Function
+	End If
+	
+	intChar					=	"0123456789"
+	intChar2				=	"+-"
+	
+	For i = 1 to len(intType) step 1
+		If inStr(intChar, mid(intType, i, 1)) = 0 Then
+			If NOT(i = 1 and inStr(intChar2, left(intType, 1)) > 0) Then
+				isInt		=	False
+				Exit Function
+			End if
+		End If
+	Next
+	isInt					=	True
+End Function
+
+Function getJobInfo(job_code)
+	Dim str
+	
+	Select case job_code
+	
+	Case "01"
+		str = "무직"	
+	Case "02"
+		str = "학생"	
+	Case "03"
+		str = "컴퓨터/인터넷"
+	Case "04"
+		str = "언론"
+	Case "05"
+		str = "공무원"
+	Case "06"
+		str = "군인"	
+	Case "07"
+		str = "서비스업"
+	Case "08"
+		str = "교육"	
+	Case "09"
+		str = "금융/증권/보험업"
+	Case "10"
+		str = "유통업"
+	Case "11"
+		str = "예술"
+	Case "12"
+		str = "의료"	
+	Case "13"
+		str = "법률"
+	Case "14"
+		str = "건설업"
+	Case "15"
+		str = "제조업"
+	Case "16"
+		str = "부동산업"
+	Case "17"
+		str = "운송업"
+	Case "18"
+		str = "농/수/임/광산업"
+	Case "19"
+		str = "가사"
+	Case "20"
+		str = "기타"
+	End Select
+	
+	getJobInfo = str
+End Function
+
+Function getAreaInfo(area_code)
+	Dim str
+	
+	Select case area_code
+	Case "01"
+		str = "서울특별시"
+	Case "02"
+		str = "인천광역시"
+	Case "03"
+		str = "대전광역시"
+	Case "04"
+		str = "대구광역시"
+	Case "05"
+		str = "광주광역시"
+	Case "06"
+		str = "울산광역시"
+	Case "07"
+		str = "부산광역시"
+	Case "08"
+		str = "경기도"
+	Case "09"
+		str = "강원도"
+	Case "10"
+		str = "충청북도"
+	Case "11"
+		str = "충청남도"
+	Case "12"
+		str = "전라북도"
+	Case "13"
+		str = "전라남도"
+	Case "14"
+		str = "경상북도"
+	Case "15"
+		str = "경상남도"
+	Case "16"
+		str = "제주도"
+	Case ""
+		str = "미등록"
+	End Select
+	
+	getAreaInfo = str
+	
+End Function
+
+Function getGroupName(idx)
+	Dim str
+	Dim i
+
+	i = CINT(idx)
+	
+	str = "K"
+	Select Case i
+	Case 1
+		str = "A"
+	Case 2
+		str = "B"
+	Case 3
+		str = "C"
+	Case 4
+		str = "D"
+	Case 5
+		str = "E"
+	Case 6
+		str = "F"
+	Case 7
+		str = "G"
+	Case 8
+		str = "H"
+	Case 9
+		str = "I"
+	Case 10
+		str = "J"
+	Case Else
+		str = "K"
+	End Select
+	
+	getGroupName = str
+End Function
+
+
+'------------------------------------------------------------------------------------------
+'년도 SelectBox
+'pStYear: 시작년도
+'pEdYear: 끝년도
+'pDefaultYear: Default로 선택되어질 년도
+'------------------------------------------------------------------------------------------
+Function GetYearSelBox(ByVal pStYear, ByVal pEdYear, ByVal pDefaultYear)
+	Dim strSelBoxHtml, i
+
+	If  Not (IsNumeric(pStYear) And IsNumeric(pEdYear)) Then
+		GetYearSelBox = ""
+		Exit Function
+	End If
+
+	If pDefaultYear = "" Then
+		pDefaultYear = 0
+	End If
+	
+	End_Year = CInt(pEdYear) + 1
+
+	strSelBoxHtml = ""
+	For i = CInt(pStYear) To End_Year
+		strSelBoxHtml = strSelBoxHtml & "<option value='" & CStr(i)  + "'"
+		If CInt(pDefaultYear) = i Then
+			strSelBoxHtml = strSelBoxHtml & " selected"
+		End If
+		strSelBoxHtml = strSelBoxHtml & ">" & CStr(i) & "</option>" & chr(13)
+	Next
+
+	GetYearSelBox = strSelBoxHtml
+End Function
+
+'------------------------------------------------------------------------------------------
+'월 SelectBox
+'pDefaultMonth: Default로 선택되어질 월
+'------------------------------------------------------------------------------------------
+Function GetMonthSelBox(ByVal pDefaultMonth)
+	Dim strSelBoxHtml, i
+
+	If pDefaultMonth = "" Then
+		pDefaultMonth = Month(Date)
+	End If
+
+	strSelBoxHtml = ""
+	For i = 1 To 12
+		strSelBoxHtml = strSelBoxHtml & "<option value='" & Right("0"&i,2) & "'"
+		If pDefaultMonth = Right("0"&i,2) Then
+			strSelBoxHtml = strSelBoxHtml & " selected"
+		End If
+		strSelBoxHtml = strSelBoxHtml & ">" & Right("0"&i,2) & "</option>" & chr(13)
+	Next
+
+	GetMonthSelBox = strSelBoxHtml
+End Function
+
+'------------------------------------------------------------------------------------------
+'DB로 부터 html 보여주기(Editor, 일반 겸용)
+'------------------------------------------------------------------------------------------
+Function SQL2HTMLEG(Text)
+    IF Not isNull(Text) Then
+        Text = replace(Text, "`", chr(39))
+        Text = replace(Text, "˝", chr(34))
+        Text = replace(Text, "&lt;", "<")
+        Text = replace(Text, "&gt;", ">")
+        Text = replace(Text, chr(13)&chr(10), "<br/>")
+    End IF
+    SQL2HTMLEG = text
+End Function
+
+'------------------------------------------------------------------------------------------
+'지역 콤보박스
+'------------------------------------------------------------------------------------------
+Function getApAreaSelect(area)
+%>
+	<option value="">선택</option>
+	<option value="서울"   <%If area="서울" Then%>selected<%End If%>>서울</option>
+	<option value="인천"   <%If area="인천" Then%>selected<%End If%>>인천</option>
+	<option value="대전"   <%If area="대전" Then%>selected<%End If%>>대전</option>
+	<option value="광주"   <%If area="광주" Then%>selected<%End If%>>광주</option>
+	<option value="대구"   <%If area="대구" Then%>selected<%End If%>>대구</option>
+	<option value="울산"   <%If area="울산" Then%>selected<%End If%>>울산</option>
+	<option value="부산"   <%If area="부산" Then%>selected<%End If%>>부산</option>
+	<option value="경기도" <%If area="경기도" Then%>selected<%End If%>>경기도</option>
+	<option value="충청도" <%If area="충청도" Then%>selected<%End If%>>충청도</option>
+	<option value="전라도" <%If area="전라도" Then%>selected<%End If%>>전라도</option>
+	<option value="강원도" <%If area="강원도" Then%>selected<%End If%>>강원도</option>
+	<option value="경상도" <%If area="경상도" Then%>selected<%End If%>>경상도</option>
+	<option value="제주"   <%If area="제주" Then%>selected<%End If%>>제주</option>
+<%
+End Function 
+
+'------------------------------------------------------------------------------------------
+'지역번호 콤보박스
+'------------------------------------------------------------------------------------------
+Function GetTelList(tel)
+%>
+	<option value="">선택</option>
+	<option value="02" <%If tel="02" Then%>selected<%End If%>>02</option>
+	<option value="031" <%If tel="031" Then%>selected<%End If%>>031</option>
+	<option value="032" <%If tel="032" Then%>selected<%End If%>>032</option>
+	<option value="033" <%If tel="033" Then%>selected<%End If%>>033</option>
+	<option value="041" <%If tel="041" Then%>selected<%End If%>>041</option>
+	<option value="042" <%If tel="042" Then%>selected<%End If%>>042</option>
+	<option value="043" <%If tel="043" Then%>selected<%End If%>>043</option>
+	<option value="051" <%If tel="051" Then%>selected<%End If%>>051</option>
+	<option value="052" <%If tel="052" Then%>selected<%End If%>>052</option>
+	<option value="053" <%If tel="053" Then%>selected<%End If%>>053</option>
+	<option value="054" <%If tel="054" Then%>selected<%End If%>>054</option>
+	<option value="055" <%If tel="055" Then%>selected<%End If%>>055</option>
+	<option value="061" <%If tel="061" Then%>selected<%End If%>>061</option>
+	<option value="062" <%If tel="062" Then%>selected<%End If%>>062</option>
+	<option value="063" <%If tel="063" Then%>selected<%End If%>>063</option>
+	<option value="064" <%If tel="064" Then%>selected<%End If%>>064</option>
+	<option value="0502" <%If tel="0502" Then%>selected<%End If%>>0502</option>
+	<option value="0505" <%If tel="0505" Then%>selected<%End If%>>0505</option>
+	<option value="070" <%If tel="070" Then%>selected<%End If%>>070</option>
+	<option value="080" <%If tel="080" Then%>selected<%End If%>>080</option>
+<%
+End Function
+
+
+
+Function maskingTxt(ByVal str, ByVal ty)
+	Dim tmpStr, i, displayLng, resultStr, tmpTel1, tmpTel2, tmpTel3, tmpVal
+	tmpStr = Trim(Replace(CStr(""& str),"-",""))
+	resultStr = ""
+	
+	Select Case ty
+		Case 1  '전화번호 (가운데자리 마스킹처리)
+
+		tmpTel1 = Left(tmpStr,3)
+		tmpTel2 = "****"
+		tmpTel3 = Right(tmpStr,4)
+
+		If (Len(tmpStr) = 10 And  Left(tmpStr,2) <> "02") Or (Len(tmpStr) = 9 And Left(tmpStr,2) = "02") Then 
+			tmpTel2 = "***"
+		End If 
+
+		If Left(tmpStr,2) = "02" Then 
+			tmpTel1 = "02"
+		End If 
+		
+
+		resultStr = tmpTel1 & "-" & tmpTel2 & "-" & tmpTel3
+
+		Case 2	'주소 (서울 강서구까지만 표기)
+
+		spt_tmpStr = Split(tmpStr, " ")
+		resultStr = spt_tmpStr(0) & " " & spt_tmpStr(1)
+
+		Case 3	'이메일 주소 @전 아이디 끝에 두글자 마스킹 처리
+		If Len(tmpStr) > 0 Then 
+			If InStr(tmpStr, "@") > 0 Then 
+				spt_tmpStr = Split(tmpStr, "@")
+				email1 = Left(spt_tmpStr(0), Len(spt_tmpStr(0)) - 2) 
+				email2 = spt_tmpStr(1)
+				resultStr = email1 & "**@" & email2
+			Else
+				email1 = Left(tmpstr, Len(tmpStr) -2)
+				resultStr = email1 & "**"
+			End If 
+		End If 
+
+	End Select
+
+	If Len(tmpStr) < 4 Then 
+		resultStr = ""
+	End If 
+
+
+	maskingTxt = resultStr
+End Function
+%>
+

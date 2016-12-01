@@ -1,0 +1,73 @@
+<!--#include virtual="/Inc/Include/ConfigSet.asp"-->
+<!--#include virtual="/inc/include/KISA_SHA256.asp"-->
+<%
+	Dim UserId, Pwd, UserName, Url, MainUrl, MenuCode
+	
+	UserId		= Request.form("UserId")
+	Pwd			= Request.form("Pwd")
+	UserPwdChk 	= Request.form("UserPwdChk")
+
+	Pwd			= SHA256_Encrypt(Pwd)
+	Str 		= ""
+
+	MainUrl 	= "/Main/Main.asp"	
+	BackUrl 	= "/login.asp"	
+
+	Set conn = Server.CreateObject("ADODB.Connection")
+	conn.Open Enders.getConnStr(0)
+
+	SQL = "SELECT vchUSER_NAME, vchUSER_ID, chADMIN_TYPE  FROM ADMIN_USER_MASTER WHERE vchUSER_ID ='"& UserId &"' and vchPASSWORD = '"& Pwd &"' "
+
+	Set rs = conn.Execute(SQL)
+
+	if Not rs.eof and Not rs.bof Then
+		USER_NM = rs("vchUSER_NAME")
+		USER_ID = rs("vchUSER_ID")
+		ADMIN_TYPE = rs("chADMIN_TYPE")
+	Else
+		USER_NM = "재로그인 필요"
+		USER_ID = "재로그인 필요"
+		ADMIN_TYPE = "재로그인 필요"
+	End if
+
+	If Len(USER_NM) > 0 Then
+		If UserPwdChk = "false" Then
+			Str = "패스워드 규칙에 어긋납니다.\n\n패스워드 변경후 다시 로그인 해주세요.\n\n관리자의 비밀번호는 평문+숫자 조합 8자리 이상 이어야 합니다."
+		Else
+			session("UserId")		=	USER_ID
+			session("UserName")		=	USER_NM
+			session("AdminType")	=	ADMIN_TYPE
+			Url 					=	MainUrl
+			MenuCode 				=	"000000"
+		End If
+	Else
+		Str = "관리자 등록이 안되어 있습니다.\n\n관리자에게 문의 하세요."
+	End If 	
+
+	Enders.Dispose(0)
+
+%>
+
+<script language="javascript">
+<!--
+	function Return_Page() {
+		var form = document.AcionForm;
+		form.action = "<%=Url%>";
+		form.submit();
+	}
+//-->
+</script>
+
+<form name="AcionForm" method="post">
+	<input type="hidden" name="blank" value="">
+	<input type="hidden" name="MenuCode" value="<%=MenuCode%>">
+</form>
+
+<%
+	If Str = "" Then
+		response.write "<script type='text/javascript'>Return_Page();</script>"
+	Else
+		Call sb_AlertUrl(BackUrl,str)
+	End If
+
+%>
