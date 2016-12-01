@@ -142,7 +142,7 @@ function selectDelRow() {
 				</colgroup>
 				<thead>
 				<tr>
-					<th>선택</th>
+					<th>선2222택</th>
 					<th>아이디</th>
 					<th>소속</th>
 					<th>성명</th>
